@@ -1,31 +1,35 @@
 package model;
 
-import java.util.HashMap;
-import java.util.Map;
 import java.util.Random;
-import java.util.UUID;
+import java.util.concurrent.CyclicBarrier;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
 public class Table {
 
-    private Player[] players;
+    private final Player[] players;
 
-//    private Map<UUID, Boolean> playerGuesses;
+    private final AtomicInteger round = new AtomicInteger(0);
 
-    private AtomicInteger round = new AtomicInteger(0);
+    private final AtomicInteger shortStraw = new AtomicInteger();
+    private final AtomicInteger pickedStraw = new AtomicInteger();
 
-    private Integer shortStraw;
+    private final CyclicBarrier cyclicBarrier;
 
-    private Integer pickedStraw;
+    private final AtomicBoolean isReset = new AtomicBoolean(true);
+    private final AtomicBoolean isGameOver = new AtomicBoolean(false);
 
-    public Table() {
+    public Table(CyclicBarrier cyclicBarrier) {
         this.players = new Player[6];
         this.setShortStraw();
+        this.cyclicBarrier = cyclicBarrier;
     }
 
     public synchronized int giveSeat(Player player) {
-        for (int i = 0; i < 6 ; i++) {
-            if(players[i] == null) {
+        for (int i = 0; i < 6; i++) {
+            if (players[i] == null) {
+                isReset.set(false);
+                isGameOver.set(false);
                 players[i] = player;
                 return i + 1;
             }
@@ -34,45 +38,50 @@ public class Table {
         return -1;
     }
 
-//    public synchronized void setPlayerGuess(UUID player, Boolean isShort) {
-//        this.playerGuesses.put(player, isShort);
-//    }
-//
-//    public synchronized boolean getPlayerGuess(UUID player) {
-//        return this.playerGuesses.get(player);
-//    }
-
     public void setShortStraw() {
         round.addAndGet(1);
 
         System.out.println("Round " + getRound() + " beginning!");
 
-        shortStraw = new Random().nextInt(6 - getRound()) + 1;
+        shortStraw.set(new Random().nextInt(6 - getRound() + 1) + 1);
     }
-//    public boolean pickStraw() {
-//        round.addAndGet(1);
-//
-//        int playerCount = getPlayerCount();
-//
-//        double chance = 1.0 / playerCount;
-//        double randomValue = new Random().nextDouble();
-//
-//        return randomValue <= chance;
-//    }
 
     public int getRound() {
         return round.get();
     }
 
     public Integer getShortStraw() {
-        return shortStraw;
+        return shortStraw.get();
     }
 
     public void setPickedStraw(Integer pickedStraw) {
-        this.pickedStraw = pickedStraw;
+        this.pickedStraw.set(pickedStraw);
     }
 
     public Integer getPickedStraw() {
-        return pickedStraw;
+        return pickedStraw.get();
+    }
+
+    public synchronized void reset() {
+        if (!isReset.get()) {
+            isReset.set(true);
+
+            System.out.println("------ STARTING NEW PARTY -------");
+
+            for (int i = 0; i < 6; i++)
+                players[i] = null;
+
+            round.set(0);
+            setShortStraw();
+            this.pickedStraw.set(0);
+        }
+    }
+
+    public boolean getIsGameOver() {
+        return isGameOver.get();
+    }
+
+    public void setIsGameOver(boolean isGameOver) {
+        this.isGameOver.set(isGameOver);
     }
 }

@@ -1,6 +1,7 @@
 package server;
 
 import com.google.gson.Gson;
+
 import model.*;
 import request.SeatRequest;
 import request.StrawPickRequest;
@@ -19,9 +20,9 @@ public class ServerThread extends Thread {
     BufferedReader in;
     PrintWriter out;
 
-    private Gson gson;
-    private Table table;
-    private CyclicBarrier cyclicBarrier;
+    private final Gson gson;
+    private final Table table;
+    private final CyclicBarrier cyclicBarrier;
 
     public ServerThread(Socket socket, Table table, CyclicBarrier cyclicBarrier) {
         this.socket = socket;
@@ -58,19 +59,19 @@ public class ServerThread extends Thread {
             // Notify the player if he got the table seat
             sendSeatResponse(tableSeatResponse);
 
-            cyclicBarrier.await();
-
             if (seatNumber != -1) {
                 while (table.getRound() <= 6) {
+                    if (table.getIsGameOver())
+                        break;
+
                     cyclicBarrier.await();
+
                     // Our player is guessing the straw size
                     if (seatNumber != table.getRound()) {
-                        out.println("Choose between short and long:");
                         StrawSizeGuessRequest strawSizeGuessRequest = receiveStrawSizeGuessRequest();
 
                         cyclicBarrier.await();
                         boolean success = strawSizeGuessRequest.isShort() == (table.getPickedStraw().equals(table.getShortStraw()));
-                        System.out.println("Player chosen: " + strawSizeGuessRequest.isShort() + " and the result is: " + success);
 
                         if (success)
                             player.addPoint();
@@ -79,29 +80,38 @@ public class ServerThread extends Thread {
 
                         sendStrawGuessResponse(new StrawSizeGuessResponse(success, endGame));
 
-                        if (endGame)
+                        if (endGame) {
+                            table.setIsGameOver(true);
                             break;
+                        }
+
+                        cyclicBarrier.await();
                     }
                     // Our player is choosing the straw
                     else {
-                        out.println("Choose your straw:");
-                        table.setPickedStraw(receiveStrawPickRequest().getStraw());
+                        StrawPickRequest strawPickRequest = receiveStrawPickRequest();
+
+                        table.setPickedStraw(strawPickRequest.getStraw());
 
                         cyclicBarrier.await();
-                        System.out.println("Player picked: " + table.getPickedStraw() + " and the short straw is: " + table.getShortStraw());
 
                         sendStrawPickResponse(new StrawPickResponse(table.getPickedStraw().equals(table.getShortStraw())));
 
-                        if (table.getPickedStraw().equals(table.getShortStraw()))
+                        if (table.getPickedStraw().equals(table.getShortStraw())) {
+                            table.setIsGameOver(true);
                             break;
+                        }
+
+                        cyclicBarrier.await();
 
                         table.setShortStraw();
                     }
                 }
+                cyclicBarrier.await();
+                System.out.println("Player with seat " + seatNumber + " has " + player.getPoints() + " points");
+                cyclicBarrier.await();
+                table.reset();
             }
-
-            System.out.println("-------- END GAME ---------");
-            System.out.println("Player points: " + player.getPoints());
         } catch (Exception e) {
             e.printStackTrace();
         } finally {

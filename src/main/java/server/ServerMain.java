@@ -14,14 +14,11 @@ public class ServerMain {
     private static final int PORT = 9999;
 
     public static void main(String[] args) {
-
-        Table table = new Table();
         CyclicBarrier cyclicBarrier = new CyclicBarrier(6);
-
+        Table table = new Table(cyclicBarrier);
         try {
             ServerSocket ss = new ServerSocket(PORT);
             ExecutorService executorService = Executors.newCachedThreadPool();
-            System.out.println("Krupije je spreman");
 
             while (true) {
                 Socket socket = ss.accept();

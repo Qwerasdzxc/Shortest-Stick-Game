@@ -6,10 +6,13 @@ public class StrawSizeGuessRequest {
 
     private UUID id;
 
+    private Integer seat;
+
     private boolean isShort;
 
-    public StrawSizeGuessRequest(UUID id, boolean isShort) {
+    public StrawSizeGuessRequest(UUID id, Integer seat, boolean isShort) {
         this.id = id;
+        this.seat = seat;
         this.isShort = isShort;
     }
 
@@ -19,6 +22,14 @@ public class StrawSizeGuessRequest {
 
     public void setId(UUID id) {
         this.id = id;
+    }
+
+    public Integer getSeat() {
+        return seat;
+    }
+
+    public void setSeat(Integer seat) {
+        this.seat = seat;
     }
 
     public void setIsShort(boolean isShort) {

@@ -18,11 +18,11 @@ public class ClientThread implements Runnable{
 
     private static final int PORT = 9999;
 
-    private Socket socket;
-    private BufferedReader in;
-    private PrintWriter out;
+    private final Socket socket;
+    private final BufferedReader in;
+    private final PrintWriter out;
 
-    private Gson gson;
+    private final Gson gson;
 
     public ClientThread() throws IOException {
         socket = new Socket("localhost", PORT);
@@ -36,7 +36,7 @@ public class ClientThread implements Runnable{
             SeatRequest seatRequest = new SeatRequest();
             UUID id = UUID.randomUUID();
 
-        System.out.println("Igrac " + id.toString() + " pokusava da pristupi igri.");
+            System.out.println("Igrac " + id.toString() + " pokusava da pristupi igri.");
 
             seatRequest.setId(id);
             sendSeatRequest(seatRequest);
@@ -51,8 +51,7 @@ public class ClientThread implements Runnable{
                 while (round <= 6) {
                     if (tableSeatResponse.getSeatNumber() != round) {
                         boolean isShort = new Random().nextBoolean();
-                        System.out.println(in.readLine());
-                        sendStrawSizeGuessRequest(new StrawSizeGuessRequest(id, isShort));
+                        sendStrawSizeGuessRequest(new StrawSizeGuessRequest(id, tableSeatResponse.getSeatNumber(), isShort));
                         StrawSizeGuessResponse response = receiveStrawSizeGuessResponse();
 
                         if (response.isEndGame()) {
@@ -61,9 +60,8 @@ public class ClientThread implements Runnable{
                         }
 
                     } else {
-                        int strawToPick = new Random().nextInt(6 - round) + 1;
-                        System.out.println(in.readLine());
-                        sendStrawRequest(new StrawPickRequest(id, strawToPick));
+                        int strawToPick = new Random().nextInt(6 - round + 1) + 1;
+                        sendStrawRequest(new StrawPickRequest(id, tableSeatResponse.getSeatNumber(), strawToPick, round));
                         boolean isShort = receiveStrawPickResponse().isShort();
 
                         if (isShort) {

@@ -6,11 +6,17 @@ public class StrawPickRequest {
 
     private UUID id;
 
+    private Integer seat;
+
     private Integer straw;
 
-    public StrawPickRequest(UUID id, Integer straw) {
+    private Integer round;
+
+    public StrawPickRequest(UUID id, Integer seat, Integer straw, Integer round) {
         this.id = id;
+        this.seat = seat;
         this.straw = straw;
+        this.round = round;
     }
 
     public UUID getId() {
@@ -27,5 +33,21 @@ public class StrawPickRequest {
 
     public void setStraw(Integer straw) {
         this.straw = straw;
+    }
+
+    public Integer getSeat() {
+        return seat;
+    }
+
+    public void setSeat(Integer seat) {
+        this.seat = seat;
+    }
+
+    public Integer getRound() {
+        return round;
+    }
+
+    public void setRound(Integer round) {
+        this.round = round;
     }
 }
